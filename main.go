@@ -17,9 +17,9 @@ var collectionAddition *mongo.Collection
 func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
+	clientOptions := options.Client().ApplyURI("mongodb+srv://mongo:12345678Abc@datatest.rxmvq.mongodb.net/")
 	client, _ := mongo.Connect(ctx, clientOptions)
-	collectionMenu = client.Database("bigdata").Collection("thucdon")
+	collectionMenu = client.Database("bigdata").Collection("menu")
 	collectionAddition = client.Database("bigdata").Collection("addition")
 	router := mux.NewRouter().StrictSlash(true)
 	router.Path("/menu/").Queries("conditions", "{conditions}", "page", "{page}", "limit", "{limit}").HandlerFunc(getMenus).Methods("GET")
