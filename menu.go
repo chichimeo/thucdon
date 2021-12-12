@@ -15,7 +15,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func Datatable(items interface{}, filter, p, l string, searchable []string) (datatable interface{}, total int, err error) {
+func Datatable(items interface{}, p, l string, searchable []Condition) (datatable interface{}, total int, err error) {
 	var page, limit int
 
 	if p == "" {
@@ -35,13 +35,38 @@ func Datatable(items interface{}, filter, p, l string, searchable []string) (dat
 	}
 
 	bsonfilter := bson.M{}
-	or := []bson.M{}
-	for _, field := range searchable {
-		or = append(or, bson.M{field: primitive.Regex{Pattern: filter, Options: "gi"}})
+	and := []bson.M{}
+	for _, condition := range searchable {
+		if condition.Operator == "" || condition.Field == "" || condition.Type == "" || condition.Value == "" {
+			continue
+		}
+		if condition.Type == "string" {
+			switch condition.Operator {
+			case "=":
+				and = append(and, bson.M{condition.Field: condition.Value})
+			case "*":
+				and = append(and, bson.M{condition.Field: primitive.Regex{Pattern: condition.Value, Options: "gi"}})
+			}
+		}
+		if condition.Type == "int" {
+			switch condition.Operator {
+			case "=":
+				and = append(and, bson.M{condition.Field: condition.Value})
+			case ">=":
+				and = append(and, bson.M{condition.Field: primitive.Regex{Pattern: condition.Value, Options: "gte"}})
+			case ">":
+				and = append(and, bson.M{condition.Field: primitive.Regex{Pattern: condition.Value, Options: "gt"}})
+			case "<=":
+				and = append(and, bson.M{condition.Field: primitive.Regex{Pattern: condition.Value, Options: "lte"}})
+			case "<":
+				and = append(and, bson.M{condition.Field: primitive.Regex{Pattern: condition.Value, Options: "lt"}})
+			}
+		}
 	}
+	fmt.Println("search", and)
 
-	if len(or) > 0 {
-		bsonfilter = bson.M{"$or": or}
+	if len(and) > 0 {
+		bsonfilter = bson.M{"$and": and}
 	}
 
 	// find record of one page
@@ -126,12 +151,20 @@ func getMenus(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("content-type", "application/json")
 	var temp []Menu
 	_, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	filter := request.FormValue("filter")
+	conditions := request.FormValue("conditions")
 	page := request.FormValue("page")
 	limit := request.FormValue("limit")
 	defer cancel()
-	searchable := []string{"foodCode", "foodName", "unit"}
-	datatable, total, err := Datatable(temp, filter, page, limit, searchable)
+	var searchable []Condition
+	err := json.Unmarshal([]byte(conditions), &searchable)
+	if err != nil {
+		response.WriteHeader(http.StatusInternalServerError)
+		response.Write([]byte(`{ "message": "` + err.Error() + `" }`))
+		return
+	}
+
+	fmt.Println("search", conditions, searchable)
+	datatable, total, err := Datatable(temp, page, limit, searchable)
 	if err != nil {
 		response.WriteHeader(http.StatusInternalServerError)
 		response.Write([]byte(`{ "message": "` + err.Error() + `" }`))

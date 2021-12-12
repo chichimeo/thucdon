@@ -1,6 +1,8 @@
 package main
 
-import "time"
+import (
+	"time"
+)
 
 // Menu represents a menu document in MongoDB
 type Menu struct {
@@ -38,4 +40,11 @@ type Addition struct {
 type DataTable struct {
 	Data  []Menu `json:"data" bson:"data"`
 	Total int    `json:"total" bson:"total"`
+}
+
+type Condition struct {
+	Field    string `json:"field" bson:"field"`
+	Value    string `json:"value" bson:"value"`
+	Type     string `json:"type" bson:"type"`
+	Operator string `json:"operator" bson:"operator"`
 }

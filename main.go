@@ -22,7 +22,7 @@ func main() {
 	collectionMenu = client.Database("bigdata").Collection("thucdon")
 	collectionAddition = client.Database("bigdata").Collection("addition")
 	router := mux.NewRouter().StrictSlash(true)
-	router.Path("/menu/").Queries("filter", "{filter}", "page", "{page}", "limit", "{limit}").HandlerFunc(getMenus).Methods("GET")
+	router.Path("/menu/").Queries("conditions", "{conditions}", "page", "{page}", "limit", "{limit}").HandlerFunc(getMenus).Methods("GET")
 	router.HandleFunc("/menu/{foodCode}", getByID).Methods("GET")
 	router.HandleFunc("/menu", createMenu).Methods("POST")
 	router.HandleFunc("/menu/{foodCode}", updateMenu).Methods("PUT")
